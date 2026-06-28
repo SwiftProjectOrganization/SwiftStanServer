@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Non-sandboxed: the server shells out to cmdstan via Foundation.Process and
+	     writes under ~/Documents/StanCases, which the App Sandbox forbids. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<!-- Listen for incoming connections (the HTTP server). -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+</dict>
+</plist>

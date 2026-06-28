@@ -1,0 +1,255 @@
+openapi: '3.1.0'
+info:
+  title: SwiftStan API
+  version: 1.0.0
+  description: >
+    HTTP surface for the SwiftStan library. Each command is a POST under /v1.
+    Every operation returns 200 with a CommandResult; a non-empty `error` field
+    signals a logical failure (mirrors the library's (String, String) convention).
+    CANONICAL SPEC — the SwiftStanApp client keeps a byte-identical copy.
+servers:
+  - url: http://127.0.0.1:8080
+
+paths:
+  /v1/health:
+    get:
+      operationId: health
+      summary: Liveness + resolved server configuration.
+      responses:
+        '200':
+          description: Server is up; reports resolved cmdstan + StanCases paths.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResult' }
+
+  /v1/compile:
+    post:
+      operationId: compile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CompileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/sample:
+    post:
+      operationId: sample
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SampleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/optimize:
+    post:
+      operationId: optimize
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CmdstanRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/pathfinder:
+    post:
+      operationId: pathfinder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CmdstanRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/laplace:
+    post:
+      operationId: laplace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CmdstanRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/generated_quantities:
+    post:
+      operationId: generatedQuantities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CmdstanRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/stansummary:
+    post:
+      operationId: stansummary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CmdstanRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/ulam:
+    post:
+      operationId: ulam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UlamRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/csv2json:
+    post:
+      operationId: csv2json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/alist2dsl:
+    post:
+      operationId: alist2dsl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/stancode:
+    post:
+      operationId: stancode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/stan2alist:
+    post:
+      operationId: stan2alist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Stan2AlistRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+  /v1/runinfo:
+    post:
+      operationId: runinfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FileRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Command' }
+
+components:
+  responses:
+    Command:
+      description: Command result (status + error; outputPath for file ops).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/CommandResult' }
+
+  schemas:
+    CommandResult:
+      type: object
+      properties:
+        status: { type: string }
+        error: { type: string }
+        outputPath: { type: string }
+      required: [status, error]
+
+    HealthResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        cmdstan: { type: string }
+        stanCases: { type: string }
+      required: [ok, cmdstan, stanCases]
+
+    # cmdstan-backed ops with no extra flags (optimize, pathfinder, laplace,
+    # generated_quantities, stansummary).
+    CmdstanRequest:
+      type: object
+      properties:
+        model: { type: string, default: bernoulli }
+        arguments:
+          type: array
+          items: { type: string }
+        cmdstan: { type: string }
+        verbose: { type: boolean, default: false }
+
+    CompileRequest:
+      type: object
+      properties:
+        model: { type: string, default: bernoulli }
+        arguments:
+          type: array
+          items: { type: string }
+        cmdstan: { type: string }
+        verbose: { type: boolean, default: false }
+        install: { type: boolean, default: false }
+        force: { type: boolean, default: false }
+
+    SampleRequest:
+      type: object
+      properties:
+        model: { type: string, default: bernoulli }
+        arguments:
+          type: array
+          items: { type: string }
+        cmdstan: { type: string }
+        verbose: { type: boolean, default: false }
+        install: { type: boolean, default: false }
+        nosummary: { type: boolean, default: false }
+
+    UlamRequest:
+      type: object
+      properties:
+        model: { type: string, default: bernoulli }
+        arguments:
+          type: array
+          items: { type: string }
+        cmdstan: { type: string }
+        verbose: { type: boolean, default: false }
+        force: { type: boolean, default: false }
+
+    # Pure-Swift file-translation ops (csv2json, dsl2stan, alist2dsl, stancode,
+    # runinfo). `model` is required.
+    FileRequest:
+      type: object
+      properties:
+        model: { type: string, default: bernoulli }
+        verbose: { type: boolean, default: false }
+      required: [model]
+
+    Stan2AlistRequest:
+      type: object
+      properties:
+        model: { type: string, default: bernoulli }
+        verbose: { type: boolean, default: false }
+        force: { type: boolean, default: false }
+      required: [model]

@@ -1,0 +1,7 @@
+# Server-side generation. The SwiftStanApp client uses an identical openapi.yaml
+# with a config that sets `generate: [types, client]` instead.
+generate:
+  - types
+  - server
+accessModifier: internal
+namingStrategy: idiomatic
