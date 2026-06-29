@@ -5,7 +5,8 @@ import OpenAPIHummingbird
 import OpenAPIRuntime
 
 /// Owns the Hummingbird HTTP server lifecycle and exposes observable state for
-/// the GUI (`ContentView`). The server binds to localhost only and registers the
+/// the GUI (`ContentView`). The server binds to all interfaces (0.0.0.0) so it
+/// is reachable from the local network, not just localhost. Registers the
 /// OpenAPI-generated handlers from `StanAPIHandler`.
 ///
 /// cmdstan runs (compile/sample/...) can take minutes; the response/idle timeouts

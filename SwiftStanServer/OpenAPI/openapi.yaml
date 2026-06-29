@@ -225,6 +225,13 @@ components:
         verbose: { type: boolean, default: false }
         install: { type: boolean, default: false }
         nosummary: { type: boolean, default: false }
+        num_samples: { type: integer }
+        num_warmup: { type: integer }
+        num_chains: { type: integer }
+        thin: { type: integer }
+        seed: { type: integer }
+        adapt_delta: { type: number }
+        max_treedepth: { type: integer }
 
     UlamRequest:
       type: object

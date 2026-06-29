@@ -10,7 +10,7 @@ struct ContentView: View {
     VStack(alignment: .leading, spacing: 16) {
       Text("SwiftStanServer")
         .font(.largeTitle).bold()
-      Text("Serves the SwiftStan commands over an OpenAPI/Hummingbird HTTP API on localhost.")
+      Text("Serves the SwiftStan commands over an OpenAPI/Hummingbird HTTP API on the local network.")
         .font(.subheadline)
         .foregroundStyle(.secondary)
 
@@ -21,7 +21,7 @@ struct ContentView: View {
           .fill(controller.isRunning ? .green : .secondary)
           .frame(width: 10, height: 10)
         Text(controller.isRunning
-             ? "Running on http://\(ServerSettings.host):\(controller.boundPort ?? port)"
+             ? "Running on http://\(ProcessInfo.processInfo.hostName):\(controller.boundPort ?? port)"
              : "Stopped")
         Spacer()
         if controller.isRunning {

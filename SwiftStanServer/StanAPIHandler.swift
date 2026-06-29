@@ -36,6 +36,20 @@ struct StanAPIHandler: APIProtocol {
     .init(status: status, error: error, outputPath: outputPath)
   }
 
+  /// Translate structured SampleRequest fields into cmdstan key=value tokens,
+  /// emitted in the order cmdstan's hierarchical parser expects under `sample`.
+  private func sampleTokens(_ req: Components.Schemas.SampleRequest) -> [String] {
+    var t: [String] = []
+    if let v = req.numSamples    { t.append("num_samples=\(v)") }
+    if let v = req.numWarmup     { t.append("num_warmup=\(v)") }
+    if let v = req.thin          { t.append("thin=\(v)") }
+    if let v = req.adaptDelta    { t.append(contentsOf: ["adapt", "delta=\(v)"]) }
+    if let v = req.maxTreedepth  { t.append(contentsOf: ["algorithm=hmc", "engine=nuts", "max_depth=\(v)"]) }
+    if let v = req.numChains     { t.append("num_chains=\(v)") }
+    if let v = req.seed          { t.append(contentsOf: ["random", "seed=\(v)"]) }
+    return t
+  }
+
   /// Map a throwing URL-returning library call to a `CommandResult` payload.
   private func fileResult(_ work: @Sendable @escaping () throws -> URL) async
     -> Components.Schemas.CommandResult {
@@ -72,7 +86,7 @@ struct StanAPIHandler: APIProtocol {
     let r = await offload {
       SwiftStan.sample(
         model: (req.model ?? "bernoulli").lowercased(),
-        arguments: req.arguments ?? [],
+        arguments: self.sampleTokens(req) + (req.arguments ?? []),
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         nosummary: req.nosummary ?? false,

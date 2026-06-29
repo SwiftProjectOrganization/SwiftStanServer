@@ -15,7 +15,7 @@ enum ServerSettings {
   }
 
   static let defaultPort = 8080
-  static let host = "127.0.0.1"
+  static let host = "0.0.0.0"
 
   static func cmdstanPath() -> String {
     if let stored = UserDefaults.standard.string(forKey: Key.cmdstanPath),
