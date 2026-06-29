@@ -16,6 +16,11 @@ import SwiftStan
 /// `error` field signals a *logical* failure (mirrors the library's
 /// `(String, String)` convention); real 4xx/5xx are reserved for transport faults.
 struct StanAPIHandler: APIProtocol {
+  let log: RequestLog
+
+  init(log: RequestLog) {
+    self.log = log
+  }
 
   // MARK: - Helpers
 
@@ -66,143 +71,208 @@ struct StanAPIHandler: APIProtocol {
   // MARK: - cmdstan-backed operations (return (status, error))
 
   func compile(_ input: Operations.Compile.Input) async throws -> Operations.Compile.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "compile", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.compile(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         install: req.install ?? false,
         force: req.force ?? false)
     }
+    await log.record(command: "compile", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func sample(_ input: Operations.Sample.Input) async throws -> Operations.Sample.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "sample", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.sample(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: self.sampleTokens(req) + (req.arguments ?? []),
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         nosummary: req.nosummary ?? false,
         install: req.install ?? false)
     }
+    await log.record(command: "sample", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func optimize(_ input: Operations.Optimize.Input) async throws -> Operations.Optimize.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "optimize", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.optimize(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
         verbose: req.verbose ?? false)
     }
+    await log.record(command: "optimize", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func pathfinder(_ input: Operations.Pathfinder.Input) async throws -> Operations.Pathfinder.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "pathfinder", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.pathfinder(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
         verbose: req.verbose ?? false)
     }
+    await log.record(command: "pathfinder", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func laplace(_ input: Operations.Laplace.Input) async throws -> Operations.Laplace.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "laplace", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.laplace(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
         verbose: req.verbose ?? false)
     }
+    await log.record(command: "laplace", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func generatedQuantities(_ input: Operations.GeneratedQuantities.Input) async throws -> Operations.GeneratedQuantities.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "generated_quantities", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.generated_Quantities(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
         verbose: req.verbose ?? false)
     }
+    await log.record(command: "generated_quantities", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func stansummary(_ input: Operations.Stansummary.Input) async throws -> Operations.Stansummary.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "stansummary", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.stansummary(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
         verbose: req.verbose ?? false)
     }
+    await log.record(command: "stansummary", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   func ulam(_ input: Operations.Ulam.Input) async throws -> Operations.Ulam.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "ulam", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
     let r = await offload {
       SwiftStan.ulamPipeline(
-        model: (req.model ?? "bernoulli").lowercased(),
+        model: model,
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         force: req.force ?? false,
         arguments: req.arguments ?? [])
     }
+    await log.record(command: "ulam", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
   }
 
   // MARK: - Pure-Swift file-translation operations (throw / return URL)
 
   func csv2json(_ input: Operations.Csv2json.Input) async throws -> Operations.Csv2json.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
-    let payload = await fileResult { try SwiftStan.csv2json(model: req.model.lowercased(), verbose: req.verbose ?? false) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "csv2json", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = req.model.lowercased()
+    let payload = await fileResult { try SwiftStan.csv2json(model: model, verbose: req.verbose ?? false) }
+    await log.record(command: "csv2json", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
 
   func alist2dsl(_ input: Operations.Alist2dsl.Input) async throws -> Operations.Alist2dsl.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
-    let payload = await fileResult { try SwiftStan.alist2dsl(model: req.model.lowercased(), verbose: req.verbose ?? false) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "alist2dsl", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = req.model.lowercased()
+    let payload = await fileResult { try SwiftStan.alist2dsl(model: model, verbose: req.verbose ?? false) }
+    await log.record(command: "alist2dsl", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
 
   func stancode(_ input: Operations.Stancode.Input) async throws -> Operations.Stancode.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
-    let payload = await fileResult { try SwiftStan.stancode(model: req.model.lowercased(), verbose: req.verbose ?? false) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "stancode", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = req.model.lowercased()
+    let payload = await fileResult { try SwiftStan.stancode(model: model, verbose: req.verbose ?? false) }
+    await log.record(command: "stancode", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
 
   func stan2alist(_ input: Operations.Stan2alist.Input) async throws -> Operations.Stan2alist.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
-    let payload = await fileResult { try SwiftStan.stan2alist(model: req.model.lowercased(), verbose: req.verbose ?? false, force: req.force ?? false) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "stan2alist", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = req.model.lowercased()
+    let payload = await fileResult { try SwiftStan.stan2alist(model: model, verbose: req.verbose ?? false, force: req.force ?? false) }
+    await log.record(command: "stan2alist", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
 
   func runinfo(_ input: Operations.Runinfo.Input) async throws -> Operations.Runinfo.Output {
-    guard case let .json(req) = input.body else { return .ok(.init(body: .json(ok(status: "", error: "bad request")))) }
-    let payload = await fileResult { try SwiftStan.runinfo(model: req.model.lowercased(), verbose: req.verbose ?? false) }
+    guard case let .json(req) = input.body else {
+      await log.record(command: "runinfo", model: "?", status: "bad request", success: false)
+      return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
+    }
+    let model = req.model.lowercased()
+    let payload = await fileResult { try SwiftStan.runinfo(model: model, verbose: req.verbose ?? false) }
+    await log.record(command: "runinfo", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
 

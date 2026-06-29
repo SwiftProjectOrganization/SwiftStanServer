@@ -18,6 +18,7 @@
 		D43DEAD22FF173AE0038834F /* OpenAPIHummingbird in Frameworks */ = {isa = PBXBuildFile; productRef = D43DEAD12FF173AE0038834F /* OpenAPIHummingbird */; };
 		D43DEAD82FF1752F0038834F /* openapi.yaml in Resources */ = {isa = PBXBuildFile; fileRef = D43DEAD62FF1752F0038834F /* openapi.yaml */; };
 		D43DEAD92FF1752F0038834F /* openapi-generator-config.yaml in Resources */ = {isa = PBXBuildFile; fileRef = D43DEAD72FF1752F0038834F /* openapi-generator-config.yaml */; };
+		D43DEB582FF2D85A0038834F /* RequestLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43DEB572FF2D85A0038834F /* RequestLog.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		D43DEAB42FF164DA0038834F /* SwiftStanServerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftStanServerApp.swift; sourceTree = SOURCE_ROOT; };
 		D43DEAD62FF1752F0038834F /* openapi.yaml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = openapi.yaml; sourceTree = SOURCE_ROOT; };
 		D43DEAD72FF1752F0038834F /* openapi-generator-config.yaml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "openapi-generator-config.yaml"; sourceTree = SOURCE_ROOT; };
+		D43DEB572FF2D85A0038834F /* RequestLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestLog.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 				D43DEAB22FF164DA0038834F /* SwiftStanServer.xcodeproj */,
 				D43DEAB42FF164DA0038834F /* SwiftStanServerApp.swift */,
 				000000000000000000000020 /* Products */,
+				D43DEB572FF2D85A0038834F /* RequestLog.swift */,
 			);
 			path = SwiftStanServer;
 			sourceTree = SOURCE_ROOT;
@@ -172,6 +175,7 @@
 		000000000000000120000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				D43DEB582FF2D85A0038834F /* RequestLog.swift in Sources */,
 				D43DEAB92FF164DA0038834F /* StanAPIHandler.swift in Sources */,
 				D43DEABA2FF164DA0038834F /* ServerSettings.swift in Sources */,
 				D43DEABB2FF164DA0038834F /* SwiftStanServerApp.swift in Sources */,
@@ -344,7 +348,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.goedman.SwiftStanServer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -386,7 +390,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.goedman.SwiftStanServer;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -10,6 +10,6 @@ struct SwiftStanServerApp: App {
         .environment(controller)
         .onAppear { controller.start() }
     }
-    .defaultSize(width: 480, height: 280)
+    .defaultSize(width: 480, height: 440)
   }
 }

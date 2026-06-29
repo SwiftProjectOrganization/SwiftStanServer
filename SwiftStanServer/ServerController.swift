@@ -17,6 +17,7 @@ final class ServerController {
   var isRunning = false
   var lastError: String?
   var boundPort: Int?
+  let log = RequestLog()
 
   private var runTask: Task<Void, Never>?
 
@@ -24,11 +25,12 @@ final class ServerController {
     guard !isRunning else { return }
     let port = ServerSettings.port()
     lastError = nil
+    let log = self.log
 
     runTask = Task { [weak self] in
       do {
         let router = Router()
-        let handler = StanAPIHandler()
+        let handler = StanAPIHandler(log: log)
         try handler.registerHandlers(on: router)
 
         let app = Application(
