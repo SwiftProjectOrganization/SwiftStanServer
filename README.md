@@ -37,11 +37,11 @@ The repo includes the `.xcodeproj` with all source files, the OpenAPI spec, enti
 | Port | GUI / UserDefaults `serverPort` → default `8080` |
 | StanCases root | `$STAN_CASES` env var → `~/Documents/StanCases` |
 
-The server binds to `127.0.0.1` only. Change the port or cmdstan path in the GUI, then restart the server.
+The server binds to `0.0.0.0` (all interfaces) and is reachable from other machines on the local network. Change the port or cmdstan path in the GUI, then restart the server.
 
 ## API
 
-The canonical spec is `SwiftStanServer/openapi.yaml` (SwiftStanApp keeps a byte-identical copy). All operations are `POST /v1/<command>` and return HTTP 200 with a `CommandResult`:
+The canonical spec is `SwiftStanServer/openapi.yaml` (SwiftStanApp keeps a byte-identical copy). All operations are `POST /v1/<command>` (except health) and return HTTP 200 with a `CommandResult`:
 
 ```json
 { "status": "...", "error": "", "outputPath": "/path/to/output" }
@@ -49,11 +49,21 @@ The canonical spec is `SwiftStanServer/openapi.yaml` (SwiftStanApp keeps a byte-
 
 A non-empty `error` field signals a logical failure. Real `4xx`/`5xx` are reserved for transport faults.
 
-### Health
+### `stanCases` per-request override
+
+Every request accepts an optional `stanCases` field (e.g. `"SR2Cases"`, `"ARM/Chapter3"`). The server resolves it by appending to `~/Documents`, with a path-traversal guard. When omitted, falls back to `$STAN_CASES` or `~/Documents/StanCases`.
+
+### Health and Model Listing
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/v1/health` | Liveness check; returns resolved cmdstan and StanCases paths |
+| `POST` | `/v1/models` | List subdirectory names under the resolved StanCases root |
+
+The `models` response schema:
+```json
+{ "models": ["bernoulli", "..."], "root": "/path/to/StanCases", "error": "" }
+```
 
 ### cmdstan-backed Operations
 
@@ -62,7 +72,7 @@ These shell out to cmdstan and can take minutes. The server keeps the HTTP conne
 | Endpoint | Request Schema | Extra Fields |
 |---|---|---|
 | `POST /v1/compile` | `CompileRequest` | `install`, `force` |
-| `POST /v1/sample` | `SampleRequest` | `install`, `nosummary` |
+| `POST /v1/sample` | `SampleRequest` | `install`, `nosummary`, structured sampling params |
 | `POST /v1/optimize` | `CmdstanRequest` | — |
 | `POST /v1/pathfinder` | `CmdstanRequest` | — |
 | `POST /v1/laplace` | `CmdstanRequest` | — |
@@ -73,8 +83,24 @@ These shell out to cmdstan and can take minutes. The server keeps the HTTP conne
 All cmdstan requests share these common fields:
 
 ```json
-{ "model": "bernoulli", "arguments": ["key=value"], "cmdstan": "/path/override", "verbose": false }
+{ "model": "bernoulli", "arguments": ["key=value"], "cmdstan": "/path/override", "stanCases": "SR2Cases", "verbose": false }
 ```
+
+#### Structured sampling parameters (`SampleRequest`)
+
+In addition to the common fields, `sample` accepts first-class parameters that are translated to cmdstan tokens automatically:
+
+| Field | cmdstan mapping |
+|---|---|
+| `num_samples` | `num_samples=N` |
+| `num_warmup` | `num_warmup=N` |
+| `thin` | `thin=N` |
+| `num_chains` | `num_chains=N` |
+| `seed` | `random seed=N` |
+| `adapt_delta` | `adapt delta=V` |
+| `max_treedepth` | `algorithm=hmc engine=nuts max_depth=N` |
+
+These are prepended to `arguments` and merged before passing to the library.
 
 ### Pure-Swift File-Translation Operations
 
@@ -88,13 +114,18 @@ These run entirely in-process and return quickly.
 | `POST /v1/stan2alist` | Convert Stan code back to alist | `force` |
 | `POST /v1/runinfo` | Extract run metadata from results | — |
 
-File-translation requests use `{ "model": "bernoulli", "verbose": false }`.
+File-translation requests use `{ "model": "bernoulli", "stanCases": "...", "verbose": false }`.
 
 ## Quick Verification
 
 ```bash
 # Liveness check
 curl http://127.0.0.1:8080/v1/health
+
+# List available models
+curl -X POST http://127.0.0.1:8080/v1/models \
+     -H 'Content-Type: application/json' \
+     -d '{}'
 
 # Generate Stan code for bernoulli model
 curl -X POST http://127.0.0.1:8080/v1/stancode \
@@ -106,10 +137,10 @@ curl -X POST http://127.0.0.1:8080/v1/compile \
      -H 'Content-Type: application/json' \
      -d '{"model":"bernoulli"}'
 
-# Run MCMC sampling
+# Run MCMC sampling (with structured params)
 curl -X POST http://127.0.0.1:8080/v1/sample \
      -H 'Content-Type: application/json' \
-     -d '{"model":"bernoulli"}'
+     -d '{"model":"bernoulli","num_samples":1000,"num_warmup":500}'
 ```
 
 Expected sample output: `{"status":"...","error":""}` with `bernoulli.samples.csv` appearing under `~/Documents/StanCases/bernoulli/Results/`.
@@ -117,10 +148,11 @@ Expected sample output: `{"status":"...","error":""}` with `bernoulli.samples.cs
 ## Architecture
 
 - **`StanAPIHandler.swift`** — `struct StanAPIHandler: APIProtocol`; one method per operation forwarding to the matching `SwiftStan` library function. Synchronous blocking calls are wrapped in `Task.detached` via `offload(_:)` so the event loop isn't starved during long-running cmdstan operations.
-- **`ServerController.swift`** — `@Observable @MainActor` class owning the Hummingbird `Application` lifecycle (`start()`/`stop()`).
-- **`ServerSettings.swift`** — Resolves cmdstan path, port, and StanCases root from UserDefaults, environment, and defaults.
+- **`ServerController.swift`** — `@Observable @MainActor` class owning the Hummingbird `Application` lifecycle (`start()`/`stop()`), binding to `0.0.0.0` (all interfaces).
+- **`ServerSettings.swift`** — Resolves cmdstan path, port, and StanCases root from UserDefaults, environment, and defaults. `resolveStanCasesRoot(_:)` handles per-request sub-path overrides with a path-traversal guard.
+- **`RequestLog.swift`** — `@Observable @MainActor` bounded log (max 200 entries) of requests handled by `StanAPIHandler`; owned by `ServerController`, displayed in `ContentView`.
 - **`SwiftStanServerApp.swift`** — `@main` App entry point; starts the server on appear.
-- **`ContentView.swift`** — Minimal status GUI: running indicator, port, cmdstan path, Start/Stop button.
+- **`ContentView.swift`** — Liquid Glass GUI: running indicator with hostname URL, port, cmdstan path, Start/Stop button, and a scrollable recent-requests log.
 
 ## License
 
