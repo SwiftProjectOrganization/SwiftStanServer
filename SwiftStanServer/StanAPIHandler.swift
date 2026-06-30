@@ -30,6 +30,12 @@ struct StanAPIHandler: APIProtocol {
     return ServerSettings.cmdstanPath()
   }
 
+  /// Resolve the stanCases sub-path to a URL. The URL is passed directly to
+  /// the library's `caseRoot:` parameter — no environment variable needed.
+  private func stanCasesURL(_ sub: String?) -> URL {
+    URL(fileURLWithPath: ServerSettings.resolveStanCasesRoot(sub))
+  }
+
   /// Run a synchronous, blocking library call off the cooperative thread pool so
   /// the Hummingbird event loop isn't starved during multi-minute cmdstan runs.
   private func offload<T: Sendable>(_ work: @Sendable @escaping () -> T) async -> T {
@@ -68,6 +74,31 @@ struct StanAPIHandler: APIProtocol {
     }
   }
 
+  // MARK: - Model listing
+
+  func models(_ input: Operations.Models.Input) async throws -> Operations.Models.Output {
+    guard case let .json(req) = input.body else {
+      return .ok(.init(body: .json(.init(models: [], root: "", error: "bad request"))))
+    }
+    let root = ServerSettings.resolveStanCasesRoot(req.stanCases)
+    let url = URL(fileURLWithPath: root)
+    do {
+      let entries = try FileManager.default.contentsOfDirectory(
+        at: url,
+        includingPropertiesForKeys: [.isDirectoryKey],
+        options: [.skipsHiddenFiles]
+      )
+      let names = entries.compactMap { entry -> String? in
+        guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
+        else { return nil }
+        return entry.lastPathComponent
+      }.sorted()
+      return .ok(.init(body: .json(.init(models: names, root: root, error: ""))))
+    } catch {
+      return .ok(.init(body: .json(.init(models: [], root: root, error: "\(error)"))))
+    }
+  }
+
   // MARK: - cmdstan-backed operations (return (status, error))
 
   func compile(_ input: Operations.Compile.Input) async throws -> Operations.Compile.Output {
@@ -77,6 +108,7 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.compile(
         model: model,
@@ -84,7 +116,8 @@ struct StanAPIHandler: APIProtocol {
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         install: req.install ?? false,
-        force: req.force ?? false)
+        force: req.force ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "compile", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -97,6 +130,7 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.sample(
         model: model,
@@ -104,7 +138,8 @@ struct StanAPIHandler: APIProtocol {
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         nosummary: req.nosummary ?? false,
-        install: req.install ?? false)
+        install: req.install ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "sample", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -117,12 +152,14 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.optimize(
         model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
-        verbose: req.verbose ?? false)
+        verbose: req.verbose ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "optimize", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -135,12 +172,14 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.pathfinder(
         model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
-        verbose: req.verbose ?? false)
+        verbose: req.verbose ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "pathfinder", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -153,12 +192,14 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.laplace(
         model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
-        verbose: req.verbose ?? false)
+        verbose: req.verbose ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "laplace", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -171,12 +212,14 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.generated_Quantities(
         model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
-        verbose: req.verbose ?? false)
+        verbose: req.verbose ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "generated_quantities", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -189,12 +232,14 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.stansummary(
         model: model,
         arguments: req.arguments ?? [],
         cmdstan: cmdstan,
-        verbose: req.verbose ?? false)
+        verbose: req.verbose ?? false,
+        caseRoot: caseRoot)
     }
     await log.record(command: "stansummary", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -207,13 +252,15 @@ struct StanAPIHandler: APIProtocol {
     }
     let model = (req.model ?? "bernoulli").lowercased()
     let cmdstan = resolveCmdstan(req.cmdstan)
+    let caseRoot = stanCasesURL(req.stanCases)
     let r = await offload {
       SwiftStan.ulamPipeline(
         model: model,
         cmdstan: cmdstan,
         verbose: req.verbose ?? false,
         force: req.force ?? false,
-        arguments: req.arguments ?? [])
+        arguments: req.arguments ?? [],
+        caseRoot: caseRoot)
     }
     await log.record(command: "ulam", model: model, status: r.0, success: r.1.isEmpty)
     return .ok(.init(body: .json(ok(status: r.0, error: r.1))))
@@ -227,7 +274,8 @@ struct StanAPIHandler: APIProtocol {
       return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
     }
     let model = req.model.lowercased()
-    let payload = await fileResult { try SwiftStan.csv2json(model: model, verbose: req.verbose ?? false) }
+    let caseRoot = stanCasesURL(req.stanCases)
+    let payload = await fileResult { try SwiftStan.csv2json(model: model, verbose: req.verbose ?? false, caseRoot: caseRoot) }
     await log.record(command: "csv2json", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
@@ -238,7 +286,8 @@ struct StanAPIHandler: APIProtocol {
       return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
     }
     let model = req.model.lowercased()
-    let payload = await fileResult { try SwiftStan.alist2dsl(model: model, verbose: req.verbose ?? false) }
+    let caseRoot = stanCasesURL(req.stanCases)
+    let payload = await fileResult { try SwiftStan.alist2dsl(model: model, verbose: req.verbose ?? false, caseRoot: caseRoot) }
     await log.record(command: "alist2dsl", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
@@ -249,7 +298,8 @@ struct StanAPIHandler: APIProtocol {
       return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
     }
     let model = req.model.lowercased()
-    let payload = await fileResult { try SwiftStan.stancode(model: model, verbose: req.verbose ?? false) }
+    let caseRoot = stanCasesURL(req.stanCases)
+    let payload = await fileResult { try SwiftStan.stancode(model: model, verbose: req.verbose ?? false, caseRoot: caseRoot) }
     await log.record(command: "stancode", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
@@ -260,7 +310,8 @@ struct StanAPIHandler: APIProtocol {
       return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
     }
     let model = req.model.lowercased()
-    let payload = await fileResult { try SwiftStan.stan2alist(model: model, verbose: req.verbose ?? false, force: req.force ?? false) }
+    let caseRoot = stanCasesURL(req.stanCases)
+    let payload = await fileResult { try SwiftStan.stan2alist(model: model, verbose: req.verbose ?? false, force: req.force ?? false, caseRoot: caseRoot) }
     await log.record(command: "stan2alist", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }
@@ -271,7 +322,8 @@ struct StanAPIHandler: APIProtocol {
       return .ok(.init(body: .json(ok(status: "", error: "bad request"))))
     }
     let model = req.model.lowercased()
-    let payload = await fileResult { try SwiftStan.runinfo(model: model, verbose: req.verbose ?? false) }
+    let caseRoot = stanCasesURL(req.stanCases)
+    let payload = await fileResult { try SwiftStan.runinfo(model: model, verbose: req.verbose ?? false, caseRoot: caseRoot) }
     await log.record(command: "runinfo", model: model, status: payload.status, success: payload.error.isEmpty)
     return .ok(.init(body: .json(payload)))
   }

@@ -43,4 +43,19 @@ enum ServerSettings {
     let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     return docs.appendingPathComponent("StanCases").path
   }
+
+  /// Resolve a per-request StanCases sub-path (e.g. "StanCases", "SR2Cases",
+  /// "ARM/Chapter3") by appending it to ~/Documents. Falls back to stanCasesRoot()
+  /// if sub is nil/empty or attempts a path traversal outside ~/Documents.
+  static func resolveStanCasesRoot(_ sub: String?) -> String {
+    guard let sub, !sub.isEmpty else { return stanCasesRoot() }
+    let docs = FileManager.default
+      .urls(for: .documentDirectory, in: .userDomainMask)[0]
+      .standardizedFileURL
+    // Strip any leading slashes so the path component is always relative.
+    let rel = sub.drop(while: { $0 == "/" })
+    let candidate = docs.appendingPathComponent(String(rel)).standardizedFileURL
+    guard candidate.path.hasPrefix(docs.path) else { return stanCasesRoot() }
+    return candidate.path
+  }
 }

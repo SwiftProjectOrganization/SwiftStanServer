@@ -12,13 +12,13 @@
 		D43DEABB2FF164DA0038834F /* SwiftStanServerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43DEAB42FF164DA0038834F /* SwiftStanServerApp.swift */; };
 		D43DEABC2FF164DA0038834F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43DEAAA2FF164DA0038834F /* ContentView.swift */; };
 		D43DEABD2FF164DA0038834F /* ServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43DEAAE2FF164DA0038834F /* ServerController.swift */; };
-		D43DEAC92FF172500038834F /* SwiftStan in Frameworks */ = {isa = PBXBuildFile; productRef = D43DEAC82FF172500038834F /* SwiftStan */; };
 		D43DEACC2FF172E50038834F /* _OpenAPIGeneratorCore in Frameworks */ = {isa = PBXBuildFile; productRef = D43DEACB2FF172E50038834F /* _OpenAPIGeneratorCore */; };
 		D43DEACF2FF1731F0038834F /* OpenAPIRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = D43DEACE2FF1731F0038834F /* OpenAPIRuntime */; };
 		D43DEAD22FF173AE0038834F /* OpenAPIHummingbird in Frameworks */ = {isa = PBXBuildFile; productRef = D43DEAD12FF173AE0038834F /* OpenAPIHummingbird */; };
 		D43DEAD82FF1752F0038834F /* openapi.yaml in Resources */ = {isa = PBXBuildFile; fileRef = D43DEAD62FF1752F0038834F /* openapi.yaml */; };
 		D43DEAD92FF1752F0038834F /* openapi-generator-config.yaml in Resources */ = {isa = PBXBuildFile; fileRef = D43DEAD72FF1752F0038834F /* openapi-generator-config.yaml */; };
 		D43DEB582FF2D85A0038834F /* RequestLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43DEB572FF2D85A0038834F /* RequestLog.swift */; };
+		D43DEB822FF3553C0038834F /* SwiftStan in Frameworks */ = {isa = PBXBuildFile; productRef = D43DEB812FF3553C0038834F /* SwiftStan */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,10 +39,10 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				D43DEB822FF3553C0038834F /* SwiftStan in Frameworks */,
 				D43DEAD22FF173AE0038834F /* OpenAPIHummingbird in Frameworks */,
 				D43DEACC2FF172E50038834F /* _OpenAPIGeneratorCore in Frameworks */,
 				D43DEACF2FF1731F0038834F /* OpenAPIRuntime in Frameworks */,
-				D43DEAC92FF172500038834F /* SwiftStan in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -104,10 +104,10 @@
 			);
 			name = SwiftStanServer;
 			packageProductDependencies = (
-				D43DEAC82FF172500038834F /* SwiftStan */,
 				D43DEACB2FF172E50038834F /* _OpenAPIGeneratorCore */,
 				D43DEACE2FF1731F0038834F /* OpenAPIRuntime */,
 				D43DEAD12FF173AE0038834F /* OpenAPIHummingbird */,
+				D43DEB812FF3553C0038834F /* SwiftStan */,
 			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* SwiftStanServer.app */;
@@ -139,11 +139,11 @@
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				D43DEAC72FF172500038834F /* XCRemoteSwiftPackageReference "SwiftStanLibrary" */,
 				D43DEACA2FF172E50038834F /* XCRemoteSwiftPackageReference "swift-openapi-generator" */,
 				D43DEACD2FF1731F0038834F /* XCRemoteSwiftPackageReference "swift-openapi-runtime" */,
 				D43DEAD02FF173AE0038834F /* XCRemoteSwiftPackageReference "swift-openapi-hummingbird" */,
 				D43DEAD32FF173E20038834F /* XCRemoteSwiftPackageReference "hummingbird" */,
+				D43DEB802FF3553C0038834F /* XCRemoteSwiftPackageReference "SwiftStanLibrary" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -430,14 +430,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		D43DEAC72FF172500038834F /* XCRemoteSwiftPackageReference "SwiftStanLibrary" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SwiftProjectOrganization/SwiftStanLibrary";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 		D43DEACA2FF172E50038834F /* XCRemoteSwiftPackageReference "swift-openapi-generator" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-openapi-generator";
@@ -470,14 +462,17 @@
 				minimumVersion = 2.25.0;
 			};
 		};
+		D43DEB802FF3553C0038834F /* XCRemoteSwiftPackageReference "SwiftStanLibrary" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftProjectOrganization/SwiftStanLibrary";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D43DEAC82FF172500038834F /* SwiftStan */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D43DEAC72FF172500038834F /* XCRemoteSwiftPackageReference "SwiftStanLibrary" */;
-			productName = SwiftStan;
-		};
 		D43DEACB2FF172E50038834F /* _OpenAPIGeneratorCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D43DEACA2FF172E50038834F /* XCRemoteSwiftPackageReference "swift-openapi-generator" */;
@@ -497,6 +492,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D43DEACA2FF172E50038834F /* XCRemoteSwiftPackageReference "swift-openapi-generator" */;
 			productName = "plugin:OpenAPIGenerator";
+		};
+		D43DEB812FF3553C0038834F /* SwiftStan */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D43DEB802FF3553C0038834F /* XCRemoteSwiftPackageReference "SwiftStanLibrary" */;
+			productName = SwiftStan;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -22,6 +22,22 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/HealthResult' }
 
+  /v1/models:
+    post:
+      operationId: models
+      summary: List model directories under the resolved StanCases root.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ModelsRequest' }
+      responses:
+        '200':
+          description: Sorted model folder names plus the resolved root.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelsResult' }
+
   /v1/compile:
     post:
       operationId: compile
@@ -190,6 +206,21 @@ components:
         stanCases: { type: string }
       required: [ok, cmdstan, stanCases]
 
+    ModelsRequest:
+      type: object
+      properties:
+        stanCases: { type: string }
+
+    ModelsResult:
+      type: object
+      properties:
+        models:
+          type: array
+          items: { type: string }
+        root: { type: string }
+        error: { type: string }
+      required: [models, root, error]
+
     # cmdstan-backed ops with no extra flags (optimize, pathfinder, laplace,
     # generated_quantities, stansummary).
     CmdstanRequest:
@@ -200,6 +231,7 @@ components:
           type: array
           items: { type: string }
         cmdstan: { type: string }
+        stanCases: { type: string }
         verbose: { type: boolean, default: false }
 
     CompileRequest:
@@ -210,6 +242,7 @@ components:
           type: array
           items: { type: string }
         cmdstan: { type: string }
+        stanCases: { type: string }
         verbose: { type: boolean, default: false }
         install: { type: boolean, default: false }
         force: { type: boolean, default: false }
@@ -222,6 +255,7 @@ components:
           type: array
           items: { type: string }
         cmdstan: { type: string }
+        stanCases: { type: string }
         verbose: { type: boolean, default: false }
         install: { type: boolean, default: false }
         nosummary: { type: boolean, default: false }
@@ -241,6 +275,7 @@ components:
           type: array
           items: { type: string }
         cmdstan: { type: string }
+        stanCases: { type: string }
         verbose: { type: boolean, default: false }
         force: { type: boolean, default: false }
 
@@ -250,6 +285,7 @@ components:
       type: object
       properties:
         model: { type: string, default: bernoulli }
+        stanCases: { type: string }
         verbose: { type: boolean, default: false }
       required: [model]
 
@@ -257,6 +293,7 @@ components:
       type: object
       properties:
         model: { type: string, default: bernoulli }
+        stanCases: { type: string }
         verbose: { type: boolean, default: false }
         force: { type: boolean, default: false }
       required: [model]
